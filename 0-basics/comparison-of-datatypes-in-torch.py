@@ -1,31 +1,3 @@
-"""
-Benchmark speed and memory across popular PyTorch dtypes on an Ampere GPU (e.g. RTX 3090).
-
-Covered:
-Training (forward+backward):
-  - FP32 (with TF32 math on Ampere)
-  - AMP FP16 (autocast + GradScaler)
-  - AMP BF16 (if supported)
-Inference (forward only, weights actually converted / quantized):
-  - FP32
-  - FP16
-  - BF16 (if supported)
-  - INT8 weight-only (optional: bitsandbytes if installed)
-  - 4-bit (NF4) weight-only (optional: bitsandbytes if installed)
-
-Notes:
-- Native int8 training on GPU is not standard; we treat int8/4-bit as inference-only weight-only quantization.
-- bitsandbytes provides fast memory savings; real speedups depend on kernel support and batch size.
-- Dynamic/static quantization from torch.ao.quantization mainly targets CPU; omitted here for GPU focus.
-- Parameter memory for AMP training remains FP32 (master weights), so reductions only show up in inference section.
-
-Run:
-  python benchmark_dtypes_extended.py
-
-Optional installs for extra rows:
-  pip install bitsandbytes
-"""
-
 import time
 import math
 import torch
@@ -327,3 +299,24 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+'''
+Output
+
+Device: cuda
+GPU: NVIDIA GeForce RTX 3090
+BF16 supported: True
+
+Training benchmarks:
+- train_fp32(TF32): 12.63 ms/step (total 0.51s), peak mem 1.36 GB, master params 271.68 MB
+- train_amp_fp16: 11.82 ms/step (total 0.47s), peak mem 1.36 GB, master params 271.68 MB
+- train_amp_bf16: 11.05 ms/step (total 0.44s), peak mem 1.36 GB, master params 271.68 MB
+
+Inference benchmarks:
+- infer_fp32(TF32 math): 2.28 ms/step (total 0.23s), peak mem 328.30 MB, params 271.68 MB
+- infer_fp16(weights_fp16): 1.14 ms/step (total 0.11s), peak mem 172.28 MB, params 135.84 MB
+- infer_bf16(weights_bf16): 1.18 ms/step (total 0.12s), peak mem 172.28 MB, params 135.84 MB
+- infer_int8(bitsandbytes): 0.55 ms/step (total 0.06s), peak mem 114.29 MB, params 67.93 MB
+- infer_4bit_nf4(bitsandbytes): 2.09 ms/step (total 0.21s), peak mem 323.30 MB, params 33.98 MB
+'''

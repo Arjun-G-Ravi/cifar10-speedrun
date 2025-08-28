@@ -31,11 +31,13 @@ class NeuralNet(nn.Module):
         super().__init__()
         self.model = nn.Sequential(
             nn.Linear(3*32*32, 2048),
-            nn.Dropout(.2),
-            nn.ReLU(),
+            nn.LayerNorm(),
+            nn.ELU(),
+            nn.Dropout(.4),
             nn.Linear(2048, 1024),
-            nn.Dropout(.2),
-            nn.ReLU(),
+            nn.LayerNorm(),
+            nn.ELU(),
+            nn.Dropout(.1),
             nn.Linear(1024, 10),
         )
 
@@ -52,7 +54,6 @@ class NeuralNet(nn.Module):
 
 
 model = NeuralNet().to('cuda')
-# model.apply(initialize_weights)
 model.compile()
 
 loss_function = nn.CrossEntropyLoss()
@@ -100,7 +101,7 @@ def test_model():
 
 start = time.time()
 for i in range(10):
-    print(i,'->', end=' ')
+    print(i+1,'->', end=' ')
     train_epoch()
 test_model()
 print('\n-----')

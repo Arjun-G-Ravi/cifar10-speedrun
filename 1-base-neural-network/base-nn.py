@@ -4,7 +4,6 @@ import torchvision.transforms as transforms
 import torch.nn as nn
 import time
 import torch.nn.init as init
-from torch.optim.lr_scheduler import CosineAnnealingLR
 
 torch.set_float32_matmul_precision('high') # uses TF32
 torch.manual_seed(42)
@@ -35,7 +34,6 @@ class NeuralNet(nn.Module):
             nn.ELU(),
             nn.Dropout(.3),
             nn.Linear(1024, 1024),
-
             nn.ELU(),
             nn.Dropout(.2),
             nn.Linear(1024, 10),
@@ -58,8 +56,7 @@ model = NeuralNet().to('cuda')
 model.compile()
 
 loss_function = nn.CrossEntropyLoss()
-optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
-# scheduler = CosineAnnealingLR(optimizer, step_size=5, gamma=0.1)  # Reduce LR every 5 epochs
+optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
 
 def train_epoch():
     model.train()
@@ -80,31 +77,36 @@ def train_epoch():
 def test_model():
     model.eval()
     print('\n-----')
-    corrrect_pred = 0
-    total_pred = 0
-    for i,(x,y) in enumerate(train_loader):
-        x, y = x.to('cuda', non_blocking=True), y.to('cuda') 
-        y_pred = model(x)
-        y_pred_class = torch.argmax(y_pred, dim=1)
-        corrrect_pred += (y == y_pred_class).sum()
-        total_pred += y.shape[0]
-    print(f'Train Accuracy:{(corrrect_pred*100/total_pred).item():.3f}%')
+    with torch.no_grad():
+        corrrect_pred = 0
+        total_pred = 0
+        for i,(x,y) in enumerate(train_loader):
+            x, y = x.to('cuda', non_blocking=True), y.to('cuda') 
+            y_pred = model(x)
+            y_pred_class = torch.argmax(y_pred, dim=1)
+            corrrect_pred += (y == y_pred_class).sum()
+            total_pred += y.shape[0]
+        print(f'Train Accuracy:{(corrrect_pred*100/total_pred).item():.3f}%')
 
-    corrrect_pred = 0
-    total_pred = 0
-    for i,(x,y) in enumerate(test_loader):
-        x, y = x.to('cuda', non_blocking=True), y.to('cuda') 
-        y_pred = model(x)
-        y_pred_class = torch.argmax(y_pred, dim=1)
-        corrrect_pred += (y == y_pred_class).sum()
-        total_pred += y.shape[0]
-    print(f'Test Accuracy:{(corrrect_pred*100/total_pred).item():.3f}%')
+        corrrect_pred = 0
+        total_pred = 0
+        for i,(x,y) in enumerate(test_loader):
+            x, y = x.to('cuda', non_blocking=True), y.to('cuda') 
+            y_pred = model(x)
+            y_pred_class = torch.argmax(y_pred, dim=1)
+            corrrect_pred += (y == y_pred_class).sum()
+            total_pred += y.shape[0]
+        print(f'Test Accuracy:{(corrrect_pred*100/total_pred).item():.3f}%')
     
 
 start = time.time()
-for i in range(10):
+test_model()
+for i in range(50):
     print(i+1,'->', end=' ')
     train_epoch()
+    if i%10 == 0:
+        test_model()
+        print('\n-----')
 test_model()
 print('\n-----')
 end = time.time()

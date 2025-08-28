@@ -4,6 +4,7 @@ import torchvision.transforms as transforms
 import torch.nn as nn
 import time
 import torch.nn.init as init
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 torch.set_float32_matmul_precision('high') # uses TF32
 torch.manual_seed(42)
@@ -16,7 +17,7 @@ lr = 1e-3
 # -----
 transform = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)) # these are dataset mean and std (this have massive role)
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)), # these are  mean and std of cifar10 dataset over 3 color channels(this have massive role)
 
 ])
 train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
@@ -30,16 +31,16 @@ class NeuralNet(nn.Module):
     def __init__(self):
         super().__init__()
         self.model = nn.Sequential(
-            nn.Linear(3*32*32, 2048),
-            nn.LayerNorm(),
+            nn.Linear(3*32*32, 1024),
             nn.ELU(),
-            nn.Dropout(.4),
-            nn.Linear(2048, 1024),
-            nn.LayerNorm(),
+            nn.Dropout(.3),
+            nn.Linear(1024, 1024),
+
             nn.ELU(),
-            nn.Dropout(.1),
+            nn.Dropout(.2),
             nn.Linear(1024, 10),
         )
+        self.model.apply(self._init_weights)
 
     def forward(self, x):
         x = x.view(x.shape[0], -1)
@@ -58,6 +59,7 @@ model.compile()
 
 loss_function = nn.CrossEntropyLoss()
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+# scheduler = CosineAnnealingLR(optimizer, step_size=5, gamma=0.1)  # Reduce LR every 5 epochs
 
 def train_epoch():
     model.train()
@@ -65,6 +67,7 @@ def train_epoch():
     num_batches = 0
 
     for i,(x,y) in enumerate(train_loader):
+        optimizer.zero_grad()
         x, y = x.to('cuda', non_blocking=True), y.to('cuda') # non-blocking prevents cpu to gpu data transfer blocks(and make code faster)
         y_pred = model(x)
         loss = loss_function(y_pred, y)
@@ -72,7 +75,6 @@ def train_epoch():
         num_batches += 1
         loss.backward()
         optimizer.step()
-        optimizer.zero_grad()
     print((running_loss/num_batches).item())
 
 def test_model():

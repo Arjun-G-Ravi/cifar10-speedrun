@@ -33,7 +33,6 @@ class NeuralNet(nn.Module):
         super().__init__()
         self.model = nn.Sequential(
             nn.Linear(3*32*32, 1024),
-            nn.BatchNorm1d(1024),
             nn.ELU(),
             nn.Dropout(.5),
             nn.Linear(1024, 256),
@@ -60,7 +59,7 @@ class NeuralNet(nn.Module):
 
 
 model = NeuralNet().to(device)
-# model.compile()
+model.compile()
 
 loss_function = nn.CrossEntropyLoss()
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
@@ -107,7 +106,7 @@ def test_model():
 
 start = time.time()
 print('Epoch:')
-for i in range(5):
+for i in range(30):
     print(i+1,'->', end=' ')
     train_epoch()
     if (i+1)%10 == 0 and i > 1:

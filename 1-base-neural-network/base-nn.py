@@ -1,3 +1,7 @@
+'''
+Get to 60% + using only MLP for CIFAR-10 dataset
+'''
+
 import torch
 import torchvision
 import torchvision.transforms as transforms
@@ -111,7 +115,7 @@ print('Epoch:')
 for i in range(100):
     print(i+1,'->', end=' ')
     train_epoch(i)
-    if i+1 in [20, 30, 40, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]:
+    if i+1 in [50,70, 75, 80, 85, 90, 95, 100]:
         print('-----')
         test_model()
         print('-----\n')

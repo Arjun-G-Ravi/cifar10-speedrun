@@ -6,12 +6,12 @@ import time
 import torch.nn.init as init
 
 torch.set_float32_matmul_precision('high') # uses TF32
-torch.manual_seed(42)
-torch.cuda.manual_seed_all(42)
+torch.manual_seed(1)
+torch.cuda.manual_seed_all(1)
 
 # -----
 # CONFIG
-bs = 1024 * 2
+bs = 1024*2
 lr = 1e-3
 # -----
 device = 'cuda'
@@ -32,17 +32,17 @@ class NeuralNet(nn.Module):
     def __init__(self):
         super().__init__()
         self.model = nn.Sequential(
-            nn.Linear(3*32*32, 1024),
+            nn.Linear(3072, 512),
+            nn.LayerNorm(512),
+            nn.ELU(),
+            nn.Dropout(.3),
+            nn.Linear(512, 4096),
             nn.ELU(),
             nn.Dropout(.5),
-            nn.Linear(1024, 256),
-            nn.BatchNorm1d(256),
+            nn.Linear(4096, 256),
             nn.ELU(),
-            nn.Dropout(.4),
-            nn.Linear(256, 128),
-            nn.ELU(),
-            nn.Dropout(.1),
-            nn.Linear(128, 10),
+            nn.Dropout(.2),
+            nn.Linear(256, 10),
         )
         self.model.apply(self._init_weights)
 
@@ -61,10 +61,10 @@ class NeuralNet(nn.Module):
 model = NeuralNet().to(device)
 model.compile()
 
-loss_function = nn.CrossEntropyLoss()
-optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
+loss_function = nn.CrossEntropyLoss(label_smoothing=0.1)
+optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.02)
 
-def train_epoch():
+def train_epoch(epoch_ct):
     model.train()
     running_loss = 0
     num_batches = 0
@@ -78,6 +78,8 @@ def train_epoch():
         num_batches += 1
         loss.backward()
         optimizer.step()
+        # if epoch_ct < 5:
+        #     break
     print((running_loss/num_batches))
 
 def test_model():
@@ -106,10 +108,10 @@ def test_model():
 
 start = time.time()
 print('Epoch:')
-for i in range(30):
+for i in range(100):
     print(i+1,'->', end=' ')
-    train_epoch()
-    if (i+1)%10 == 0 and i > 1:
+    train_epoch(i)
+    if i+1 in [20, 30, 40, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100]:
         print('-----')
         test_model()
         print('-----\n')

@@ -20,58 +20,50 @@ bs = 1024*2
 lr = 1e-3
 # -----
 device = 'cuda'
-transform = transforms.Compose([
+transform_train = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)), # these are  mean and std of cifar10 dataset over 3 color channels(this have massive role)
     transforms.RandomHorizontalFlip(),
 
 ])
-train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)), # these are  mean and std of cifar10 dataset over 3 color channels(this have massive role)
+])
+
+train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=8, pin_memory=True) # pin_memory loads thing in RAM(making cpu-to-gpu transfer fast), drop_last is to prevent shape issue at last datapoint
 
-test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False,download=True, transform=transform)
+test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False,download=True, transform=transform_test)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=bs, shuffle=False, num_workers=8, pin_memory=True) # 
 
 
 class NeuralNet(nn.Module):
     def __init__(self):
         super().__init__()
-
-        self.conv1 = nn.Conv2d(3, 6, 5)
+        # input (bs, 3, 32, 32)
+        self.conv1 = nn.Conv2d(3, 6, 5) 
         self.pool1 = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 3)
         self.pool2 = nn.MaxPool2d(2, 2)
         self.fc1 = nn.Linear(16 * 6 * 6, 120)
-
-
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
 
         # self.model.apply(self._init_weights)
 
     def forward(self, x):
-        # x = x.view(x.shape[0], -1)
-
-        # print(x.shape)
-
-        print('cow')
         out = F.relu(self.conv1(x))
-        print('cow')
         out = self.pool1(out)
-        print('cow')
         out = F.relu(self.conv2(out))
-        print('cow')
         out = self.pool2(out)
-        print('cow')
-        out = out.view(bs, -1)
+        out = out.view(out.size(0), -1)
 
-        print(out.shape)
         out = F.relu(self.fc1(out))
-        print(out.shape)
-
-
         out = F.relu(self.fc2(out))
         out = self.fc3(out)
+        # print(out.shape)
 
         return out
     
@@ -135,7 +127,7 @@ print('Epoch:')
 for i in range(100):
     print(i+1,'->', end=' ')
     train_epoch(i)
-    if i+1 in [50,70, 75, 80, 85, 90, 95, 100]:
+    if i+1 in [5, 10, 15, 20, 25, 30, 40, 50,70, 75, 80, 85, 90, 95, 100]:
         print('-----')
         test_model()
         print('-----\n')

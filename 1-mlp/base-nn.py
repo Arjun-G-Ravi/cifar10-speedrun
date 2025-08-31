@@ -19,16 +19,23 @@ bs = 1024*2
 lr = 1e-3
 # -----
 device = 'cuda'
-transform = transforms.Compose([
+transform_train = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)), # these are  mean and std of cifar10 dataset over 3 color channels(this have massive role)
     transforms.RandomHorizontalFlip(),
 
 ])
-train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)), # these are  mean and std of cifar10 dataset over 3 color channels(this have massive role)
+
+])
+
+train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=bs, shuffle=True, num_workers=8, pin_memory=True) # pin_memory loads thing in RAM(making cpu-to-gpu transfer fast), drop_last is to prevent shape issue at last datapoint
 
-test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False,download=True, transform=transform)
+test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False,download=True, transform=transform_test)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=bs, shuffle=False, num_workers=8, pin_memory=True) # 
 
 

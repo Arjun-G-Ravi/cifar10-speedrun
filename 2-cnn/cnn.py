@@ -24,7 +24,8 @@ transform_train = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),
     transforms.RandomHorizontalFlip(),
-    # transforms.RandomVerticalFlip()
+    transforms.RandomAffine(0, shear=10, scale=(0.8, 1.2)),
+    # transforms.RandomRotation(5),  # Add slight rotation
 
 ])
 
@@ -49,7 +50,7 @@ class NeuralNet(nn.Module):
         self.conv2 = nn.Conv2d(6, 16, 3)
         self.pool2 = nn.MaxPool2d(2, 2)
         self.fc1 = nn.Linear(16 * 6 * 6, 120)
-        self.dropout1 = nn.Dropout(0.5)
+        self.dropout1 = nn.Dropout(0.2)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
 
@@ -133,7 +134,7 @@ print('Epoch:')
 for i in range(100):
     print(i+1,'->', end=' ')
     train_epoch(i)
-    if i+1 in [1, 5, 10, 15, 20, 30, 60, 50, 70, 75, 80, 85, 90, 95, 100]:
+    if (i+1)%5 == 0:
         print('-----')
         test_model()
         print('-----\n')

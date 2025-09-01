@@ -54,8 +54,6 @@ class NeuralNet(nn.Module):
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
 
-        # self.model.apply(self._init_weights)
-
     def forward(self, x):
         out = F.elu(self.conv1(x))
         out = self.pool1(out)
@@ -68,20 +66,11 @@ class NeuralNet(nn.Module):
         out = self.dropout1(out)
         out = F.elu(self.fc2(out))
         out = self.fc3(out)
-        # print(out.shape)
-
         return out
-    
-    def _init_weights(self, m):
-        if isinstance(m, nn.Linear):
-            init.kaiming_normal_(m.weight, nonlinearity='relu')
-            if m.bias is not None:
-                init.constant_(m.bias, 0)
+
 
 
 model = NeuralNet().to(device)
-# model.apply(model._init_weights)
-
 model.compile()
 
 loss_function = nn.CrossEntropyLoss(label_smoothing=0.1)
@@ -131,7 +120,7 @@ def test_model():
 
 start = time.time()
 print('Epoch:')
-for i in range(100):
+for i in range(10):
     print(i+1,'->', end=' ')
     train_epoch(i)
     if (i+1)%5 == 0:
